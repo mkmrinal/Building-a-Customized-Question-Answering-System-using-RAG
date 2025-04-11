@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>City Information Query System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        #query-box {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        #question {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #response {
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            min-height: 100px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        .error {
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <h1>City Information Query System</h1>
+    <div id="query-box">
+        <input type="text" id="question" placeholder="Ask a question about cities (e.g., 'Which city has highest population in India?')">
+        <button onclick="askQuestion()">Ask</button>
+    </div>
+    <div id="response">Enter a question to get information about cities worldwide.</div>
+
+    <script>
+        function askQuestion() {
+            const question = document.getElementById('question').value.trim();
+            const responseDiv = document.getElementById('response');
+            
+            if (!question) {
+                responseDiv.innerHTML = "<span class='error'>Please enter a question.</span>";
+                return;
+            }
+            
+            responseDiv.innerHTML = "<span class='loading'>Processing your question...</span>";
+            
+            fetch('http://localhost:5000/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ question: question })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    responseDiv.innerHTML = `<span class='error'>Error: ${data.error}</span>`;
+                } else {
+                    responseDiv.innerHTML = data.response.replace(/\n/g, '<br>');
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                responseDiv.innerHTML = `<span class='error'>Failed to get response. Please ensure:<br>
+                1. The Flask server is running<br>
+                2. You're not blocking port 5000<br>
+                3. Try refreshing the page</span>`;
+            });
+        }
+        
+        // Allow pressing Enter to submit
+        document.getElementById('question').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
